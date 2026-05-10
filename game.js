@@ -18,6 +18,7 @@ const tutorialCloseBtn= document.getElementById('tutorial-close');
 const tutorialSlides  = document.querySelectorAll('.tutorial-slide');
 const tutorialDots    = document.querySelectorAll('.tutorial-dot');
 let currentSlide = 0;
+let touchTarget  = null;
 
 let W, H;
 function resize() {
@@ -52,6 +53,27 @@ window.addEventListener('keydown', e => {
   keys[e.key] = true;
 });
 window.addEventListener('keyup',   e => { keys[e.key] = false; });
+
+// ─── Touch controls ───────────────────────────────────────────────────────────
+const powerBox = document.getElementById('power-box');
+
+window.addEventListener('touchstart', e => {
+  if (state !== 'play') return;
+  if (e.target.closest && e.target.closest('#power-box')) {
+    if (power >= POWER_MAX) activateNova();
+    return;
+  }
+  e.preventDefault();
+  touchTarget = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+}, { passive: false });
+
+window.addEventListener('touchmove', e => {
+  if (state !== 'play') return;
+  e.preventDefault();
+  touchTarget = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+}, { passive: false });
+
+window.addEventListener('touchend', () => { touchTarget = null; });
 
 // ─── Parallax star layers ─────────────────────────────────────────────────────
 // Each layer scrolls at a different speed, simulating depth.
@@ -219,6 +241,7 @@ function activateNova() {
   shake      = 5;
   powerFill.classList.remove('ready');
   powerLabel.classList.remove('ready');
+  powerBox.classList.remove('nova-ready');
   powerLabel.textContent = 'NOVA';
 }
 
@@ -237,9 +260,11 @@ function startGame() {
   player.vx   = 0;
   player.vy   = 0;
   player.tilt = 0;
+  touchTarget = null;
   powerFill.style.width = '0%';
   powerFill.classList.remove('ready');
   powerLabel.classList.remove('ready');
+  powerBox.classList.remove('nova-ready');
   powerLabel.textContent = 'NOVA';
   hideOverlay();
 }
@@ -397,6 +422,17 @@ function loop() {
     if (goUp)    player.vy -= ACCEL;
     if (goDown)  player.vy += ACCEL;
 
+    // Touch: steer toward held finger position
+    if (touchTarget) {
+      const tdx = touchTarget.x - player.x;
+      const tdy = touchTarget.y - player.y;
+      const tdist = Math.sqrt(tdx * tdx + tdy * tdy) || 1;
+      if (tdist > 12) {
+        player.vx += (tdx / tdist) * ACCEL * 1.5;
+        player.vy += (tdy / tdist) * ACCEL * 1.5;
+      }
+    }
+
     player.vx = Math.max(-MAX_SPD, Math.min(MAX_SPD, player.vx)) * FRICTION;
     player.vy = Math.max(-MAX_SPD, Math.min(MAX_SPD, player.vy)) * FRICTION;
 
@@ -469,7 +505,9 @@ function loop() {
     if (power >= POWER_MAX) {
       powerFill.classList.add('ready');
       powerLabel.classList.add('ready');
-      powerLabel.textContent = 'NOVA — SPACE';
+      powerBox.classList.add('nova-ready');
+      const isMobile = navigator.maxTouchPoints > 0;
+      powerLabel.textContent = isMobile ? 'NOVA — TAP' : 'NOVA — SPACE';
     }
 
     drawShip(player.x, player.y, player.tilt);
