@@ -9,6 +9,8 @@ const overlay   = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlaySub   = document.getElementById('overlay-sub');
 const startBtn  = document.getElementById('start-btn');
+const powerFill  = document.getElementById('power-fill');
+const powerLabel = document.getElementById('power-label');
 
 let W, H;
 function resize() {
@@ -24,13 +26,21 @@ let score  = 0;
 let best   = 0;
 let frame  = 0;
 let shake  = 0;
+let power  = 0;
+let novaFlash = 0;
+const POWER_MAX = 100;
 
 // ─── Player ──────────────────────────────────────────────────────────────────
 const player = { x: 0, y: 0, r: 11, vx: 0, vy: 0, tilt: 0 };
 
 // ─── Keys ────────────────────────────────────────────────────────────────────
 const keys = {};
-window.addEventListener('keydown', e => { keys[e.key] = true; });
+window.addEventListener('keydown', e => {
+  keys[e.key] = true;
+  if (e.key === ' ' && state === 'play' && power >= POWER_MAX) {
+    activateNova();
+  }
+});
 window.addEventListener('keyup',   e => { keys[e.key] = false; });
 
 // ─── Parallax star layers ─────────────────────────────────────────────────────
@@ -168,11 +178,24 @@ function hideOverlay() {
 }
 
 // ─── Game control ─────────────────────────────────────────────────────────────
+function activateNova() {
+  asteroids.forEach(a => spawnExplosion(a.x, a.y));
+  asteroids  = [];
+  power      = 0;
+  novaFlash  = 1;
+  shake      = 5;
+  powerFill.classList.remove('ready');
+  powerLabel.classList.remove('ready');
+  powerLabel.textContent = 'NOVA';
+}
+
 function startGame() {
   state       = 'play';
   score       = 0;
   frame       = 0;
   shake       = 0;
+  power       = 0;
+  novaFlash   = 0;
   asteroids   = [];
   particles   = [];
   player.x    = W / 2;
@@ -180,6 +203,10 @@ function startGame() {
   player.vx   = 0;
   player.vy   = 0;
   player.tilt = 0;
+  powerFill.style.width = '0%';
+  powerFill.classList.remove('ready');
+  powerLabel.classList.remove('ready');
+  powerLabel.textContent = 'NOVA';
   hideOverlay();
 }
 
@@ -287,6 +314,16 @@ function loop() {
 
   ctx.clearRect(-20, -20, W + 40, H + 40);
 
+  // ── Nova flash ──
+  if (novaFlash > 0) {
+    ctx.save();
+    ctx.globalAlpha = novaFlash * 0.6;
+    ctx.fillStyle = 'rgba(180, 230, 255, 1)';
+    ctx.fillRect(-20, -20, W + 40, H + 40);
+    ctx.restore();
+    novaFlash = Math.max(0, novaFlash - 0.07);
+  }
+
   // ── Particles ──
   particles.forEach(p => {
     p.x  += p.vx;
@@ -391,19 +428,14 @@ function loop() {
     // Draw asteroids
     asteroids.forEach(drawAsteroid);
 
-    // Danger vignette
-    const closest = asteroids.reduce((min, a) => {
-      const d = Math.hypot(a.x - player.x, a.y - player.y) - a.r;
-      return d < min ? d : min;
-    }, Infinity);
-
-    if (closest < 80) {
-      const intensity = Math.max(0, 1 - closest / 80) * 0.18;
-      ctx.save();
-      ctx.globalAlpha = intensity + Math.sin(frame * 0.3) * 0.04;
-      ctx.fillStyle   = '#f22';
-      ctx.fillRect(0, 0, W, H);
-      ctx.restore();
+    // Power bar
+    if (power < POWER_MAX) power += 0.12;
+    const pct = Math.min(power / POWER_MAX, 1);
+    powerFill.style.width = (pct * 100) + '%';
+    if (power >= POWER_MAX) {
+      powerFill.classList.add('ready');
+      powerLabel.classList.add('ready');
+      powerLabel.textContent = 'NOVA — SPACE';
     }
 
     drawShip(player.x, player.y, player.tilt);
