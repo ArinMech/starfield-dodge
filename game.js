@@ -9,8 +9,15 @@ const overlay   = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlaySub   = document.getElementById('overlay-sub');
 const startBtn  = document.getElementById('start-btn');
-const powerFill  = document.getElementById('power-fill');
-const powerLabel = document.getElementById('power-label');
+const powerFill       = document.getElementById('power-fill');
+const powerLabel      = document.getElementById('power-label');
+const learnBtn        = document.getElementById('learn-btn');
+const tutorialOverlay = document.getElementById('tutorial-overlay');
+const tutorialNextBtn = document.getElementById('tutorial-next');
+const tutorialCloseBtn= document.getElementById('tutorial-close');
+const tutorialSlides  = document.querySelectorAll('.tutorial-slide');
+const tutorialDots    = document.querySelectorAll('.tutorial-dot');
+let currentSlide = 0;
 
 let W, H;
 function resize() {
@@ -145,7 +152,7 @@ function spawnTrail(x, y) {
 // ─── Overlay helpers ─────────────────────────────────────────────────────────
 let scoreBadge   = null; // { value, isNewBest }
 
-function showOverlay(title, sub, btn, score = null, isNewBest = false) {
+function showOverlay(title, sub, btn, score = null, isNewBest = false, showLearn = false) {
   overlayTitle.textContent = title;
   overlaySub.innerHTML = sub;
   startBtn.textContent = btn;
@@ -173,12 +180,34 @@ function showOverlay(title, sub, btn, score = null, isNewBest = false) {
     }
   }
 
+  learnBtn.classList.toggle('hidden', !showLearn);
   overlay.classList.add('visible');
 }
 
 function hideOverlay() {
   overlay.classList.remove('visible');
 }
+
+// ─── Tutorial ─────────────────────────────────────────────────────────────────
+function setSlide(n) {
+  currentSlide = n;
+  tutorialSlides.forEach((s, i) => s.classList.toggle('active', i === n));
+  tutorialDots.forEach((d, i) => d.classList.toggle('active', i === n));
+  tutorialNextBtn.textContent = n === tutorialSlides.length - 1 ? 'GOT IT' : 'NEXT →';
+}
+
+learnBtn.addEventListener('click', () => {
+  setSlide(0);
+  tutorialOverlay.classList.add('visible');
+});
+tutorialCloseBtn.addEventListener('click', () => tutorialOverlay.classList.remove('visible'));
+tutorialNextBtn.addEventListener('click', () => {
+  if (currentSlide < tutorialSlides.length - 1) {
+    setSlide(currentSlide + 1);
+  } else {
+    tutorialOverlay.classList.remove('visible');
+  }
+});
 
 // ─── Game control ─────────────────────────────────────────────────────────────
 function activateNova() {
@@ -472,8 +501,9 @@ function loop() {
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 showOverlay(
   'STARFIELD DODGE',
-  'Use ← → or A D to move your ship.<br>W S or ↑ ↓ to move up and down.<br>The asteroids will hunt you down.',
-  'LAUNCH'
+  'Use ← → or A D to move your ship.<br>W S or ↑ ↓ to move up and down.<br>The asteroids will hunt you down.<br>Fill the NOVA bar and hit <strong style="color:#aef">SPACE</strong> to clear the field.',
+  'LAUNCH',
+  null, false, true
 );
 
 loop();
