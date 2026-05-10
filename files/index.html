@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Starfield Dodge</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="ui">
+    <div id="score-box">
+      <span class="label">SCORE</span>
+      <span id="score-val">0</span>
+    </div>
+    <div id="title-text">STARFIELD DODGE</div>
+    <div id="best-box">
+      <span class="label">BEST</span>
+      <span id="best-val">0</span>
+    </div>
+  </div>
+
+  <canvas id="bg-canvas"></canvas>
+  <canvas id="game-canvas"></canvas>
+
+  <div id="overlay" class="visible">
+    <div id="overlay-inner">
+      <h1 id="overlay-title">STARFIELD DODGE</h1>
+      <p id="overlay-sub">Move your mouse to pilot the ship.<br>The asteroids will hunt you down.</p>
+      <button id="start-btn">LAUNCH</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
