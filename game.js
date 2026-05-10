@@ -26,8 +26,9 @@ let score  = 0;
 let best   = 0;
 let frame  = 0;
 let shake  = 0;
-let power  = 0;
+let power     = 0;
 let novaFlash = 0;
+let novaUses  = 0;
 const POWER_MAX = 100;
 
 // ─── Player ──────────────────────────────────────────────────────────────────
@@ -36,10 +37,12 @@ const player = { x: 0, y: 0, r: 11, vx: 0, vy: 0, tilt: 0 };
 // ─── Keys ────────────────────────────────────────────────────────────────────
 const keys = {};
 window.addEventListener('keydown', e => {
-  keys[e.key] = true;
-  if (e.key === ' ' && state === 'play' && power >= POWER_MAX) {
-    activateNova();
+  if (e.key === ' ') {
+    e.preventDefault(); // stop space from clicking focused buttons
+    if (state === 'play' && power >= POWER_MAX) activateNova();
+    return;
   }
+  keys[e.key] = true;
 });
 window.addEventListener('keyup',   e => { keys[e.key] = false; });
 
@@ -182,6 +185,7 @@ function activateNova() {
   asteroids.forEach(a => spawnExplosion(a.x, a.y));
   asteroids  = [];
   power      = 0;
+  novaUses++;
   novaFlash  = 1;
   shake      = 5;
   powerFill.classList.remove('ready');
@@ -196,6 +200,7 @@ function startGame() {
   shake       = 0;
   power       = 0;
   novaFlash   = 0;
+  novaUses    = 0;
   asteroids   = [];
   particles   = [];
   player.x    = W / 2;
@@ -210,7 +215,7 @@ function startGame() {
   hideOverlay();
 }
 
-startBtn.addEventListener('click', startGame);
+startBtn.addEventListener('click', () => { startGame(); startBtn.blur(); });
 
 // ─── Input handled via keydown/keyup above ───────────────────────────────────
 
@@ -428,8 +433,8 @@ function loop() {
     // Draw asteroids
     asteroids.forEach(drawAsteroid);
 
-    // Power bar
-    if (power < POWER_MAX) power += 0.12;
+    // Power bar — recharge slows 40% per use
+    if (power < POWER_MAX) power += 0.12 / (1 + novaUses * 0.4);
     const pct = Math.min(power / POWER_MAX, 1);
     powerFill.style.width = (pct * 100) + '%';
     if (power >= POWER_MAX) {
